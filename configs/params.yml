@@ -1,0 +1,24 @@
+# Ventanas
+n_short: 20
+n_long: 60
+atr_period: 14
+
+# Umbrales de eventos
+p_prox_ticks: 6       # proximidad para disparar 'llegada'
+p_inval_ticks: 8      # penetración que invalida el nivel
+X_rebound_ticks: 10   # avance mínimo para considerar rebote
+Y_break_confirm: 16   # confirmación de ruptura
+H_horizon_bars: 12    # horizonte estático por defecto
+
+# Confluencias
+r_conf_ticks: 12
+sigma_conf: 6
+
+# Libro de niveles
+si_length_min: 3
+level_decay_sessions_tau: 5
+level_width_ref_ticks: 12
+
+# IB
+usa_ib_bars: 12
+usa_open_search_delta: 6

@@ -1,0 +1,25 @@
+weights:
+  PDH: 1.00
+  PDL: 1.00
+  USA_IBH: 0.95
+  USA_IBL: 0.95
+  VAH_D1: 0.90
+  POC_D1: 0.92
+  VAL_D1: 0.90
+  AVWAP_session: 0.88
+  VWAP: 0.85
+  VWAP_p1sigma: 0.80
+  VWAP_m1sigma: 0.80
+  VWAP_p2sigma: 0.75
+  VWAP_m2sigma: 0.75
+  SI: 0.85
+  HVN: 0.80
+  LVN: 0.80
+
+activation:
+  PD: true
+  USA_IB: true
+  VWAP: true
+  VAH_POC_VAL: true
+  SI: true
+  HVN_LVN: true

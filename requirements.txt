@@ -1,0 +1,11 @@
+numpy
+pandas
+scipy
+scikit-learn
+xgboost
+matplotlib
+plotly
+pyyaml
+tomli; python_version < "3.11"
+pymongo
+python-dotenv
