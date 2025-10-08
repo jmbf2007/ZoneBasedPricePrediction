@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: ppz
+Version: 0.1.0
+Summary: Predicción de Precio Basada en Zonas
+Requires-Python: >=3.10

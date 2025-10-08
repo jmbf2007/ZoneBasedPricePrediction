@@ -87,8 +87,10 @@ def make_supervised_from_events(
 
     # === NUEVO: MVC por vela del evento ===
     if add_mvc:
-        mvc = compute_mvc_features(df).loc[ev["idx"]].reset_index(drop=True)
-        X_list.append(mvc.add_prefix(""))  # ya viene con prefijo mvc_
+        idx_evt = ev["idx"].astype(int).to_numpy()
+        mvc = compute_mvc_features(df, idx=idx_evt, tick_size=tick_size)  # <- idx vectorial
+        # OJO: compute_mvc_features ya devuelve columnas con prefijo 'mvc_'
+        X_list.append(mvc)
 
     # === NUEVO: Order flow (solo en idx de eventos) ===
     if add_orderflow:

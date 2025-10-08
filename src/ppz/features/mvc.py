@@ -3,6 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
+from typing import Optional, Sequence
+
+EPS = 1e-9
 
 @dataclass
 class MvcFlagsParams:
@@ -21,49 +24,79 @@ def _bar_parts(o: float, h: float, l: float, c: float, eps: float):
     bull = c >= o
     return rng, body, upper, lower, bull
 
+def _safe_div(a, b):
+    return np.divide(a, np.where(np.abs(b) < EPS, np.nan, b))
 def compute_mvc_features(
     df: pd.DataFrame,
-    idx: int,
+    idx: Optional[Sequence[int]] = None,
+    *,
     tick_size: float = 0.25,
-    mvc_lower: float = 1/3,
-    mvc_upper: float = 2/3,
-) -> dict:
+) -> pd.DataFrame:
     """
-    Devuelve features/flags de MVC para la vela en 'idx'.
-    - mvc_pos ∈ [0,1] relativo al rango [Low,High]
-    - body/upper/lower wick ratios
-    - flags direccionales: exh_up/exh_down, reject_up/reject_down
-      · exhaustion: MVC en extremo (no imponemos body grande)
-      · reject: MVC en extremo opuesto al color del cuerpo
+    Devuelve features MVC por vela. Si 'idx' es None, calcula para todas.
+    Si 'idx' es array-like, calcula SOLO para esas posiciones y devuelve en ese orden.
+
+    Columns devueltas (prefijo mvc_):
+      - mvc_pos            ∈ [0,1]  (posición relativa dentro del rango de la vela)
+      - mvc_offset_ticks   (MVC - centro del cuerpo) / tick_size
+      - mvc_to_close_ticks (Close - MVC) / tick_size  (signado)
+      - body_ratio         |Close-Open| / (High-Low)
+      - dir                {-1,0,1}  (bajista, doji, alcista)
+      - upper_wick_ratio   (High - max(Open,Close)) / (High-Low)
+      - lower_wick_ratio   (min(Open,Close) - Low) / (High-Low)
+      - near_top_flag      1 si mvc_pos >= 0.66
+      - near_bottom_flag   1 si mvc_pos <= 0.34
     """
-    row = df.iloc[int(idx)]
-    o, h, l, c = float(row["Open"]), float(row["High"]), float(row["Low"]), float(row["Close"])
-    mvc = float(row.get("MVC", np.nan))
-    eps = tick_size
-
-    rng, body, upper, lower, bull = _bar_parts(o, h, l, c, eps)
-
-    if np.isnan(mvc) or rng <= 0:
-        mvc_pos = np.nan
+    if idx is None:
+        idx_arr = np.arange(len(df), dtype=int)
     else:
-        mvc_pos = (mvc - l) / max(rng, eps)
-        mvc_pos = float(np.clip(mvc_pos, 0.0, 1.0))
+        idx_arr = np.asarray(idx, dtype=int).ravel()
 
-    exh_up   = int((not np.isnan(mvc_pos)) and (mvc_pos >= mvc_upper))
-    exh_down = int((not np.isnan(mvc_pos)) and (mvc_pos <= mvc_lower))
-    reject_up   = int((not np.isnan(mvc_pos)) and (not bull) and (mvc_pos >= mvc_upper))
-    reject_down = int((not np.isnan(mvc_pos)) and (bull) and (mvc_pos <= mvc_lower))
+    sub = df.iloc[idx_arr]
 
-    return {
-        "mvc_pos": mvc_pos,
-        "body_ratio": float(body),
-        "upper_wick_ratio": float(upper),
-        "lower_wick_ratio": float(lower),
-        "exh_up": np.int8(exh_up),
-        "exh_down": np.int8(exh_down),
-        "reject_up": np.int8(reject_up),
-        "reject_down": np.int8(reject_down),
-    }
+    o = sub["Open"].to_numpy(dtype=float)
+    h = sub["High"].to_numpy(dtype=float)
+    l = sub["Low"].to_numpy(dtype=float)
+    c = sub["Close"].to_numpy(dtype=float)
+    m = sub["MVC"].to_numpy(dtype=float)
+
+    rng   = h - l
+    body  = np.abs(c - o)
+    ctr   = 0.5 * (o + c)
+
+    mvc_pos = _safe_div(m - l, rng)  # [0..1] idealmente
+    mvc_pos = np.clip(mvc_pos, 0.0, 1.0)
+
+    mvc_offset_ticks   = _safe_div(m - ctr, tick_size)
+    mvc_to_close_ticks = _safe_div(c - m, tick_size)  # signado
+
+    body_ratio       = _safe_div(body, rng)
+    upper_wick_ratio = _safe_div(h - np.maximum(o, c), rng)
+    lower_wick_ratio = _safe_div(np.minimum(o, c) - l, rng)
+
+    dir_ = np.where(c > o, 1, np.where(c < o, -1, 0)).astype(np.int8)
+
+    near_top_flag    = (mvc_pos >= 0.66).astype(np.int8)
+    near_bottom_flag = (mvc_pos <= 0.34).astype(np.int8)
+
+    out = pd.DataFrame({
+        "mvc_pos": mvc_pos.astype(np.float32),
+        "mvc_offset_ticks": mvc_offset_ticks.astype(np.float32),
+        "mvc_to_close_ticks": mvc_to_close_ticks.astype(np.float32),
+        "body_ratio": np.nan_to_num(body_ratio, nan=0.0).astype(np.float32),
+        "dir": dir_,
+        "upper_wick_ratio": np.nan_to_num(upper_wick_ratio, nan=0.0).astype(np.float32),
+        "lower_wick_ratio": np.nan_to_num(lower_wick_ratio, nan=0.0).astype(np.float32),
+        "near_top_flag": near_top_flag,
+        "near_bottom_flag": near_bottom_flag,
+    }, index=idx_arr)
+
+    # prefijo estandarizado
+    out = out.add_prefix("mvc_")
+
+    # mantiene el ORDEN de entrada
+    out = out.loc[idx_arr].reset_index(drop=True)
+    return out
 
 def _classify_vwap_slope(vwap: pd.Series, window: int, tick_size: float, flat_th: float) -> pd.Series:
     # pendiente media por barra (ticks/bar)
