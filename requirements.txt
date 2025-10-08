@@ -1,11 +1,10 @@
-numpy
+﻿numpy
 pandas
-scipy
 scikit-learn
 xgboost
+pyarrow
+zstandard
 matplotlib
 plotly
-pyyaml
-tomli; python_version < "3.11"
 pymongo
 python-dotenv

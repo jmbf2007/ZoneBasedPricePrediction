@@ -1,0 +1,21 @@
+{
+  "created_at": "2025-10-07T12:34:52.864162",
+  "n_events": 26122,
+  "label_counts": {
+    "rebound": 14355,
+    "none": 6402,
+    "breakout": 5365
+  },
+  "params": {
+    "tick_size": 0.25,
+    "H_horizon_bars": 12,
+    "p_inval_ticks": 6,
+    "X_rebound_ticks": 10,
+    "Y_break_confirm_ticks": 16,
+    "restrict_same_session": true
+  },
+  "sources": {
+    "df_base": "data/interim/ES_5m_2021_2024.parquet",
+    "events_first_pass_ALL": "(in-memory events_df_all)"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "zones": [
+    "PDH_prev",
+    "POC_D1",
+    "USA_IBH",
+    "USA_IBL",
+    "VAH_D1",
+    "VWAP"
+  ],
+  "atr_quantile": 0.4,
+  "tp_ticks": 16,
+  "sl_ticks": 8,
+  "h": 16,
+  "n_trades": 323,
+  "win_rate": 0.6006191950464397,
+  "ev_ticks": 6.99587291422525
+}

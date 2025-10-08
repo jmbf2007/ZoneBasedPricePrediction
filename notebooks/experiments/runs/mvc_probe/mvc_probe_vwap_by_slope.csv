@@ -1,0 +1,4 @@
+zone_type,vwap_slope_class,reb_rate_exh0,reb_rate_exh1,support_exh0,support_exh1
+VWAP,down,0.588,0.57,520,142
+VWAP,flat,0.752,0.528,101,36
+VWAP,up,0.567,0.63,441,119
